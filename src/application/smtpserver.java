@@ -10,14 +10,11 @@ import java.util.Set;
 
 public class smtpserver {
 
-	private static String host = "localhost";
-	private static int port = 5454;
-
 	public static void main(String[] argv) throws Exception {
 
 		ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
 
-		serverSocketChannel.socket().bind(new InetSocketAddress(host, port));
+		serverSocketChannel.socket().bind(new InetSocketAddress(argv[0], Integer.parseInt(argv[1])));
 
 		Selector selector = Selector.open();
 
