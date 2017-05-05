@@ -5,9 +5,8 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.Iterator;
 import java.util.Set;
-
-import javax.swing.text.html.HTMLDocument.Iterator;
 
 public class smtpserver {
 
@@ -26,7 +25,7 @@ public class smtpserver {
 
 			if (socketChannel != null) {
 
-				SelectionKey key = socketChannel.register(selector, SelectionKey.OP_CONNECT);
+				SelectionKey ourkey = socketChannel.register(selector, SelectionKey.OP_CONNECT);
 
 				Set<SelectionKey> selectedKeys = selector.selectedKeys();
 
@@ -34,7 +33,7 @@ public class smtpserver {
 
 				while (keyIterator.hasNext()) {
 
-					SelectionKey ourkey = keyIterator.next();
+					ourkey = keyIterator.next();
 
 					if (ourkey.isAcceptable()) {
 						// a connection was accepted by a ServerSocketChannel.
