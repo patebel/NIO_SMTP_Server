@@ -1,6 +1,7 @@
 package application;
 
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -13,15 +14,18 @@ public class smtpserver {
 	public static void main(String[] argv) throws Exception {
 
 		ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
-
 		serverSocketChannel.socket().bind(new InetSocketAddress(argv[0], Integer.parseInt(argv[1])));
-
 		Selector selector = Selector.open();
-
 		serverSocketChannel.configureBlocking(false);
+		ByteBuffer buffer = ByteBuffer.allocate(256);
 
 		while (true) {
-			SocketChannel socketChannel = serverSocketChannel.accept();
+			SocketChannel socketChannel = serverSocketChannel.accept(); // warum
+																		// einmal
+																		// socketchannel
+																		// und
+																		// einmal
+																		// serversocketchannel?
 
 			if (socketChannel != null) {
 
@@ -37,12 +41,20 @@ public class smtpserver {
 
 					if (ourkey.isAcceptable()) {
 						// a connection was accepted by a ServerSocketChannel.
+						SocketChannel client = serverSocketChannel.accept();
+						client.configureBlocking(false);
+						client.register(selector, SelectionKey.OP_READ);
 
 					} else if (ourkey.isConnectable()) {
 						// a connection was established with a remote server.
 
 					} else if (ourkey.isReadable()) {
 						// a channel is ready for reading
+						SocketChannel client = (SocketChannel) ourkey.channel();
+						client.read(buffer);
+						buffer.flip();
+						client.write(buffer);
+						buffer.clear();
 
 					} else if (ourkey.isWritable()) {
 						// a channel is ready for writing
