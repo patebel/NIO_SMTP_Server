@@ -20,19 +20,12 @@ public class smtpserver {
 		ByteBuffer buffer = ByteBuffer.allocate(256);
 
 		while (true) {
-			SocketChannel socketChannel = serverSocketChannel.accept(); // warum
-																		// einmal
-																		// socketchannel
-																		// und
-																		// einmal
-																		// serversocketchannel?
+			SocketChannel socketChannel = serverSocketChannel.accept();
 
 			if (socketChannel != null) {
 
 				SelectionKey ourkey = socketChannel.register(selector, SelectionKey.OP_CONNECT);
-
 				Set<SelectionKey> selectedKeys = selector.selectedKeys();
-
 				Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
 
 				while (keyIterator.hasNext()) {
@@ -41,7 +34,8 @@ public class smtpserver {
 
 					if (ourkey.isAcceptable()) {
 						// a connection was accepted by a ServerSocketChannel.
-						SocketChannel client = serverSocketChannel.accept();
+						ServerSocketChannel sock = (ServerSocketChannel) ourkey.channel();
+						SocketChannel client = sock.accept();
 						client.configureBlocking(false);
 						client.register(selector, SelectionKey.OP_READ);
 
@@ -53,6 +47,7 @@ public class smtpserver {
 						SocketChannel client = (SocketChannel) ourkey.channel();
 						client.read(buffer);
 						buffer.flip();
+						/* Further processing of data */
 						client.write(buffer);
 						buffer.clear();
 
