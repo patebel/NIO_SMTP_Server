@@ -39,7 +39,6 @@ public class smtpserver {
 
 		while (true) {
 			SocketChannel socketChannel = serverSocketChannel.accept();
-
 			if (socketChannel != null) {
 
 				SelectionKey ourkey = socketChannel.register(selector, SelectionKey.OP_CONNECT);
@@ -55,7 +54,7 @@ public class smtpserver {
 						ServerSocketChannel sock = (ServerSocketChannel) ourkey.channel();
 						SocketChannel client = sock.accept();
 						client.configureBlocking(false);
-						client.register(selector, SelectionKey.OP_READ);
+						client.register(selector, SelectionKey.OP_WRITE);
 						// System.out.println(message_encoding("220"));
 						buf.put(message_encoding("220"));
 						buf.flip();
@@ -74,6 +73,7 @@ public class smtpserver {
 						buffer.clear();
 
 					} else if (ourkey.isWritable()) {
+
 						// a channel is ready for writing
 					}
 
