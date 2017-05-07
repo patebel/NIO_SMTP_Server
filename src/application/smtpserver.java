@@ -14,7 +14,9 @@ public class smtpserver {
 	public static void main(String[] argv) throws Exception {
 
 		ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
-		serverSocketChannel.socket().bind(new InetSocketAddress(argv[0], Integer.parseInt(argv[1])));
+		// serverSocketChannel.socket().bind(new InetSocketAddress(argv[0],
+		// Integer.parseInt(argv[1])));
+		serverSocketChannel.socket().bind(new InetSocketAddress("localhost", 5454));
 		Selector selector = Selector.open();
 		serverSocketChannel.configureBlocking(false);
 		ByteBuffer buffer = ByteBuffer.allocate(256);
