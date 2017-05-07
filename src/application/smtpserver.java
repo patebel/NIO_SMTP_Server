@@ -6,10 +6,26 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.Iterator;
 import java.util.Set;
 
 public class smtpserver {
+
+	private static Charset messageCharset = null;
+	private static CharsetDecoder decoder = null;
+	static ByteBuffer buf = ByteBuffer.allocate(256);
+
+	public static byte[] message_encoding(String code) {
+		try {
+			messageCharset = Charset.forName("US-ASCII");
+		} catch (UnsupportedCharsetException uce) {
+		}
+		byte[] responsecode = code.getBytes(messageCharset);
+		return responsecode;
+	}
 
 	public static void main(String[] argv) throws Exception {
 
@@ -40,6 +56,10 @@ public class smtpserver {
 						SocketChannel client = sock.accept();
 						client.configureBlocking(false);
 						client.register(selector, SelectionKey.OP_READ);
+						// System.out.println(message_encoding("220"));
+						buf.put(message_encoding("220"));
+						buf.flip();
+						client.write(buf);
 
 					} else if (ourkey.isConnectable()) {
 						// a connection was established with a remote server.
