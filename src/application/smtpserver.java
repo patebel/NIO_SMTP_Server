@@ -49,6 +49,7 @@ public class smtpserver {
 	}
 
 	public static void accept(SelectionKey key, Selector selector) throws IOException {
+		// new socketChannel
 		ServerSocketChannel serverSocketChannel = (ServerSocketChannel) key.channel();
 
 		// Accept the connection and make it non-blocking
