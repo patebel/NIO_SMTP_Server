@@ -18,7 +18,7 @@ public class smtpserver {
 
 	private static Charset messageCharset = null;
 	private static CharsetDecoder decoder = null;
-	static ByteBuffer buf = ByteBuffer.allocate(4096);
+	static ByteBuffer buf = ByteBuffer.allocate(256);
 
 	public static byte[] message_encoding(String code) throws IOException {
 		try {
@@ -59,24 +59,22 @@ public class smtpserver {
 
 		// Register the new SocketChannel with our Selector, indicating
 		// we'd like to be notified when there's data waiting to be read
-		socketChannel.register(selector, SelectionKey.OP_WRITE);
-
+		try {
+			socketChannel.register(selector, SelectionKey.OP_WRITE);
+		} catch (ClosedChannelException e) {
+			e.printStackTrace(System.out);
+		}
 	}
 
-	private static void read(SelectionKey key, Selector selector) {
+	private static void read(SelectionKey key, Selector selector) throws IOException {
 		// TODO Auto-generated method stub
+
 		SocketChannel socketChannel = (SocketChannel) key.channel();
-		buf.clear();
-
-		System.out.println("I Bim in read");
-
-		// Flo's Aufgabe!
-		/*
-		 * ppppp client.configureBlocking(false); SelectionKey.OP_READ); //
-		 * System.out.println(message_encoding("220"));
-		 * buf.put(message_encoding("220")); buf.flip(); while
-		 * (buf.hasRemaining()) { client.write(buf); }
-		 */
+		try {
+			socketChannel.register(selector, SelectionKey.OP_WRITE);
+		} catch (ClosedChannelException e) {
+			e.printStackTrace(System.out);
+		}
 	}
 
 	private static void write(SelectionKey key, Selector selector) {
@@ -110,20 +108,6 @@ public class smtpserver {
 
 		try {
 
-			/*
-			 * JL: wird von der Init-Section übernommen *
-			 * 
-			 * ServerSocketChannel serverSocketChannel =
-			 * ServerSocketChannel.open(); serverSocketChannel.socket().bind(new
-			 * InetSocketAddress(argv[0], // Integer.parseInt(argv[1])));
-			 * serverSocketChannel.socket().bind(new
-			 * InetSocketAddress("localhost", 5454)); Selector selector =
-			 * Selector.open(); serverSocketChannel.configureBlocking(false);
-			 * ByteBuffer buffer = ByteBuffer.allocate(256);
-			 * 
-			 * serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-			 */
-
 			Selector selector = initSelector();
 
 			while (true) {
@@ -144,19 +128,13 @@ public class smtpserver {
 						accept(key, selector);
 						// a connection was accepted by a ServerSocketChannel.
 
-					}
-					if (key.isConnectable()) {
-						// a connection was established with a remote server.
-
-					}
-					if (key.isReadable()) {
+					} else if (key.isReadable()) {
 						// a channel is ready for reading
 						System.out.println("read");
 
 						read(key, selector);
 
-					}
-					if (key.isWritable()) {
+					} else if (key.isWritable()) {
 						// a channel is ready for writing
 						System.out.println("write");
 
