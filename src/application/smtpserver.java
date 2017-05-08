@@ -57,8 +57,8 @@ public class smtpserver {
 						if (ourkey.isAcceptable()) {
 							// a connection was accepted by a
 							// ServerSocketChannel.
-							ServerSocketChannel sock = (ServerSocketChannel) ourkey.channel();
-							SocketChannel client = sock.accept();
+							serverSocketChannel = (ServerSocketChannel) ourkey.channel();
+							SocketChannel client = serverSocketChannel.accept();
 							client.configureBlocking(false);
 							client.register(selector, SelectionKey.OP_WRITE | SelectionKey.OP_READ);
 							// System.out.println(message_encoding("220"));
