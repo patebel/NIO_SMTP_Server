@@ -70,7 +70,7 @@ public class smtpserver {
 
 		// Flo's Aufgabe!
 		/*
-		 * client.configureBlocking(false); SelectionKey.OP_READ); //
+		 * ppppp client.configureBlocking(false); SelectionKey.OP_READ); //
 		 * System.out.println(message_encoding("220"));
 		 * buf.put(message_encoding("220")); buf.flip(); while
 		 * (buf.hasRemaining()) { client.write(buf); }
