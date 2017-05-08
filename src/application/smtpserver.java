@@ -3,6 +3,7 @@ package application;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -78,6 +79,33 @@ public class smtpserver {
 		 */
 	}
 
+	private static void write(SelectionKey key, Selector selector) {
+		SocketChannel socketChannel = (SocketChannel) key.channel();
+		buf.clear();
+		try {
+			buf.put(message_encoding("220"));
+		} catch (IOException IO) {
+			IO.printStackTrace(System.out);
+		}
+
+		buf.flip();
+		while (buf.hasRemaining()) {
+			try {
+				socketChannel.write(buf);
+			} catch (IOException IO) {
+				IO.printStackTrace(System.out);
+			}
+		}
+		buf.clear();
+
+		try {
+			socketChannel.register(selector, SelectionKey.OP_READ);
+		} catch (ClosedChannelException e) {
+			e.printStackTrace(System.out);
+		}
+
+	}
+
 	public static void main(String[] argv) throws Exception {
 
 		try {
@@ -112,7 +140,7 @@ public class smtpserver {
 					SelectionKey key = keyIterator.next();
 
 					if (key.isAcceptable()) {
-						System.out.println("I Bims");
+						System.out.println("accept");
 						accept(key, selector);
 						// a connection was accepted by a ServerSocketChannel.
 
@@ -123,19 +151,16 @@ public class smtpserver {
 					}
 					if (key.isReadable()) {
 						// a channel is ready for reading
+						System.out.println("read");
+
 						read(key, selector);
 
 					}
 					if (key.isWritable()) {
-
-						SocketChannel socketChannel = (SocketChannel) key.channel();
-						buf.clear();
-						buf.put(message_encoding("220"));
-						buf.flip();
-						while (buf.hasRemaining()) {
-							socketChannel.write(buf);
-						}
 						// a channel is ready for writing
+						System.out.println("write");
+
+						write(key, selector);
 					}
 					keyIterator.remove();
 				}
