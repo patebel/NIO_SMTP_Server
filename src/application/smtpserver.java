@@ -54,11 +54,12 @@ public class smtpserver {
 						ServerSocketChannel sock = (ServerSocketChannel) ourkey.channel();
 						SocketChannel client = sock.accept();
 						client.configureBlocking(false);
-						client.register(selector, SelectionKey.OP_WRITE);
+						client.register(selector, SelectionKey.OP_WRITE | SelectionKey.OP_READ);
 						// System.out.println(message_encoding("220"));
 						buf.put(message_encoding("220"));
 						buf.flip();
-						client.write(buf);
+						while (buf.hasRemaining())
+							client.write(buf);
 
 					} else if (ourkey.isConnectable()) {
 						// a connection was established with a remote server.
