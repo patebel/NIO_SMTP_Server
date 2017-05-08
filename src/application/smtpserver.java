@@ -58,42 +58,34 @@ public class smtpserver {
 
 		// Register the new SocketChannel with our Selector, indicating
 		// we'd like to be notified when there's data waiting to be read
-		socketChannel.register(selector, SelectionKey.OP_READ);
+		key.interestOps(SelectionKey.OP_WRITE);
 	}
 
-	private static void read(SelectionKey key, Selector selector) {
+	private static void read(SelectionKey key, Selector selector) throws IOException {
 		// TODO Auto-generated method stub
-		SocketChannel socketChannel = (SocketChannel) key.channel();
-		buf.clear();
 
+		SocketChannel socketChannel = (SocketChannel) key.channel();
+		key.interestOps(SelectionKey.OP_WRITE);
 		System.out.println("I Bim in read");
 
-		// Flo's Aufgabe!
-		/*
-		 * ppppp client.configureBlocking(false); SelectionKey.OP_READ); //
-		 * System.out.println(message_encoding("220"));
-		 * buf.put(message_encoding("220")); buf.flip(); while
-		 * (buf.hasRemaining()) { client.write(buf); }
-		 */
+	}
+
+	private static void write(SelectionKey key, Selector selector) throws IOException {
+		SocketChannel socketChannel = (SocketChannel) key.channel();
+		buf.clear();
+		buf.put(message_encoding("220"));
+		buf.flip();
+		while (buf.hasRemaining()) {
+			socketChannel.write(buf);
+		}
+		System.out.println("Im write");
+		buf.clear();
+		key.interestOps(SelectionKey.OP_READ);
 	}
 
 	public static void main(String[] argv) throws Exception {
 
 		try {
-
-			/*
-			 * JL: wird von der Init-Section übernommen *
-			 * 
-			 * ServerSocketChannel serverSocketChannel =
-			 * ServerSocketChannel.open(); serverSocketChannel.socket().bind(new
-			 * InetSocketAddress(argv[0], // Integer.parseInt(argv[1])));
-			 * serverSocketChannel.socket().bind(new
-			 * InetSocketAddress("localhost", 5454)); Selector selector =
-			 * Selector.open(); serverSocketChannel.configureBlocking(false);
-			 * ByteBuffer buffer = ByteBuffer.allocate(256);
-			 * 
-			 * serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-			 */
 
 			Selector selector = initSelector();
 
@@ -115,16 +107,16 @@ public class smtpserver {
 						accept(key, selector);
 						// a connection was accepted by a ServerSocketChannel.
 
-					} else if (key.isConnectable()) {
-						// a connection was established with a remote server.
-
 					} else if (key.isReadable()) {
 						// a channel is ready for reading
 						read(key, selector);
 
 					} else if (key.isWritable()) {
 						// a channel is ready for writing
+						write(key, selector);
+						// key.interestOps(selectedKeys, OP_READ);
 					}
+					keyIterator.remove();
 				}
 
 				/*
