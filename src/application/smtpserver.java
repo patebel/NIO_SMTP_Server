@@ -3,11 +3,13 @@ package application;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.UnsupportedCharsetException;
@@ -28,6 +30,14 @@ public class smtpserver {
 		}
 		byte[] responsecode = code.getBytes(messageCharset);
 		return responsecode;
+	}
+
+	public static String message_decoder(ByteBuffer read_buf) throws CharacterCodingException {
+		CharsetDecoder decoder = messageCharset.newDecoder();
+		CharBuffer charBuf = decoder.decode(read_buf);
+		String extracted_text = charBuf.toString();
+
+		return extracted_text;
 	}
 
 	// JL: OOP neue Methode
@@ -66,22 +76,31 @@ public class smtpserver {
 		}
 	}
 
-	private static void read(SelectionKey key, Selector selector) throws IOException {
+	public static void read(SelectionKey key, Selector selector) throws IOException {
 		// TODO Auto-generated method stub
 
 		SocketChannel socketChannel = (SocketChannel) key.channel();
+		buf.clear();
+		socketChannel.read(buf);
+		buf.flip();
+
+		String client_response = message_decoder(buf);
+		System.out.println(client_response);
+
 		try {
 			socketChannel.register(selector, SelectionKey.OP_WRITE);
 		} catch (ClosedChannelException e) {
 			e.printStackTrace(System.out);
 		}
+
+		key.cancel();  //nur um keine fehlermeldung durch fehlende kommunikation zu generieren
 	}
 
 	private static void write(SelectionKey key, Selector selector) {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		buf.clear();
 		try {
-			buf.put(message_encoding("220"));
+			buf.put(message_encoding("220 \r\n"));
 		} catch (IOException IO) {
 			IO.printStackTrace(System.out);
 		}
