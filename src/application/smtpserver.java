@@ -17,7 +17,7 @@ public class smtpserver {
 
 	private static Charset messageCharset = null;
 	private static CharsetDecoder decoder = null;
-	static ByteBuffer buf = ByteBuffer.allocate(256);
+	static ByteBuffer buf = ByteBuffer.allocate(4096);
 
 	public static byte[] message_encoding(String code) throws IOException {
 		try {
@@ -58,7 +58,8 @@ public class smtpserver {
 
 		// Register the new SocketChannel with our Selector, indicating
 		// we'd like to be notified when there's data waiting to be read
-		socketChannel.register(selector, SelectionKey.OP_READ);
+		socketChannel.register(selector, SelectionKey.OP_WRITE);
+
 	}
 
 	private static void read(SelectionKey key, Selector selector) {
@@ -115,16 +116,28 @@ public class smtpserver {
 						accept(key, selector);
 						// a connection was accepted by a ServerSocketChannel.
 
-					} else if (key.isConnectable()) {
+					}
+					if (key.isConnectable()) {
 						// a connection was established with a remote server.
 
-					} else if (key.isReadable()) {
+					}
+					if (key.isReadable()) {
 						// a channel is ready for reading
 						read(key, selector);
 
-					} else if (key.isWritable()) {
+					}
+					if (key.isWritable()) {
+
+						SocketChannel socketChannel = (SocketChannel) key.channel();
+						buf.clear();
+						buf.put(message_encoding("220"));
+						buf.flip();
+						while (buf.hasRemaining()) {
+							socketChannel.write(buf);
+						}
 						// a channel is ready for writing
 					}
+					keyIterator.remove();
 				}
 
 				/*
