@@ -29,67 +29,145 @@ public class smtpserver {
 		return responsecode;
 	}
 
+	// JL: OOP neue Methode
+	public static Selector initSelector() throws IOException {
+		// create a new selector
+		Selector selector = Selector.open();
+
+		// create a non-blocking server socket channel
+		ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+		serverSocketChannel.configureBlocking(false);
+
+		// Binding
+		serverSocketChannel.socket().bind(new InetSocketAddress("localhost", 5454));
+
+		// Register and Accept server socket
+		serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+
+		return selector;
+
+	}
+
+	public static void accept(SelectionKey key, Selector selector) throws IOException {
+		ServerSocketChannel serverSocketChannel = (ServerSocketChannel) key.channel();
+
+		// Accept the connection and make it non-blocking
+		SocketChannel socketChannel = serverSocketChannel.accept();
+		socketChannel.configureBlocking(false);
+
+		// Register the new SocketChannel with our Selector, indicating
+		// we'd like to be notified when there's data waiting to be read
+		socketChannel.register(selector, SelectionKey.OP_READ);
+	}
+
+	private static void read(SelectionKey key, Selector selector) {
+		// TODO Auto-generated method stub
+		SocketChannel socketChannel = (SocketChannel) key.channel();
+		buf.clear();
+
+		System.out.println("I Bim in read");
+
+		// Flo's Aufgabe!
+		/*
+		 * client.configureBlocking(false); SelectionKey.OP_READ); //
+		 * System.out.println(message_encoding("220"));
+		 * buf.put(message_encoding("220")); buf.flip(); while
+		 * (buf.hasRemaining()) { client.write(buf); }
+		 */
+	}
+
 	public static void main(String[] argv) throws Exception {
 
 		try {
 
-			ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
-			// serverSocketChannel.socket().bind(new InetSocketAddress(argv[0],
-			// Integer.parseInt(argv[1])));
-			serverSocketChannel.socket().bind(new InetSocketAddress("localhost", 5454));
-			Selector selector = Selector.open();
-			serverSocketChannel.configureBlocking(false);
-			ByteBuffer buffer = ByteBuffer.allocate(256);
+			/*
+			 * JL: wird von der Init-Section übernommen *
+			 * 
+			 * ServerSocketChannel serverSocketChannel =
+			 * ServerSocketChannel.open(); //
+			 * serverSocketChannel.socket().bind(new InetSocketAddress(argv[0],
+			 * // Integer.parseInt(argv[1])));
+			 * serverSocketChannel.socket().bind(new
+			 * InetSocketAddress("localhost", 5454)); Selector selector =
+			 * Selector.open(); serverSocketChannel.configureBlocking(false);
+			 * ByteBuffer buffer = ByteBuffer.allocate(256);
+			 * 
+			 * serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+			 */
+
+			Selector selector = initSelector();
 
 			while (true) {
-				SocketChannel socketChannel = serverSocketChannel.accept();
-				if (socketChannel != null) {
 
-					socketChannel.configureBlocking(false);
-					SelectionKey ourkey = socketChannel.register(selector, SelectionKey.OP_CONNECT);
-					Set<SelectionKey> selectedKeys = selector.selectedKeys();
-					Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
+				int readyChannels = selector.select();
 
-					while (keyIterator.hasNext()) {
+				if (readyChannels == 0)
+					continue;
 
-						ourkey = keyIterator.next();
+				Set<SelectionKey> selectedKeys = selector.selectedKeys();
+				Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
 
-						if (ourkey.isAcceptable()) {
-							// a connection was accepted by a
-							// ServerSocketChannel.
-							ServerSocketChannel sock = (ServerSocketChannel) ourkey.channel();
-							SocketChannel client = sock.accept();
-							client.configureBlocking(false);
-							client.register(selector, SelectionKey.OP_WRITE | SelectionKey.OP_READ);
-							// System.out.println(message_encoding("220"));
-							buf.put(message_encoding("220"));
-							buf.flip();
-							while (buf.hasRemaining()) {
-								client.write(buf);
-							}
+				while (keyIterator.hasNext()) {
+					SelectionKey key = keyIterator.next();
 
-						} else if (ourkey.isConnectable()) {
-							// a connection was established with a remote
-							// server.
+					if (key.isAcceptable()) {
+						System.out.println("I Bims");
+						accept(key, selector);
+						// a connection was accepted by a ServerSocketChannel.
 
-						} else if (ourkey.isReadable()) {
-							// a channel is ready for reading
-							SocketChannel client = (SocketChannel) ourkey.channel();
-							client.read(buffer);
-							buffer.flip();
-							/* Further processing of data */
-							client.write(buffer);
-							buffer.clear();
+					} else if (key.isConnectable()) {
+						// a connection was established with a remote server.
 
-						} else if (ourkey.isWritable()) {
+					} else if (key.isReadable()) {
+						// a channel is ready for reading
+						read(key, selector);
 
-							// a channel is ready for writing
-						}
-
-						keyIterator.remove();
+					} else if (key.isWritable()) {
+						// a channel is ready for writing
 					}
-
 				}
+
+				/*
+				 * SocketChannel socketChannel = serverSocketChannel.accept();
+				 * if (socketChannel != null) {
+				 * 
+				 * socketChannel.configureBlocking(false); SelectionKey ourkey =
+				 * socketChannel.register(selector, SelectionKey.OP_CONNECT);
+				 * Set<SelectionKey> selectedKeys = selector.selectedKeys();
+				 * Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
+				 * 
+				 * 
+				 * while (keyIterator.hasNext()) {
+				 * 
+				 * ourkey = keyIterator.next();
+				 * 
+				 * if (ourkey.isAcceptable()) { // a connection was accepted by
+				 * a // ServerSocketChannel. ServerSocketChannel sock =
+				 * (ServerSocketChannel) ourkey.channel(); SocketChannel client
+				 * = sock.accept(); client.configureBlocking(false);
+				 * client.register(selector, SelectionKey.OP_WRITE |
+				 * SelectionKey.OP_READ); //
+				 * System.out.println(message_encoding("220"));
+				 * buf.put(message_encoding("220")); buf.flip(); while
+				 * (buf.hasRemaining()) { client.write(buf); }
+				 * 
+				 * } else if (ourkey.isConnectable()) { // a connection was
+				 * established with a remote // server.
+				 * 
+				 * } else if (ourkey.isReadable()) { // a channel is ready for
+				 * reading SocketChannel client = (SocketChannel)
+				 * ourkey.channel(); client.read(buffer); buffer.flip(); //
+				 * Further processing of data client.write(buffer);
+				 * buffer.clear();
+				 * 
+				 * } else if (ourkey.isWritable()) {
+				 * 
+				 * // a channel is ready for writing }
+				 * 
+				 * keyIterator.remove(); }
+				 * 
+				 * }
+				 */
 			}
 		} catch (IOException e) {
 			e.printStackTrace(System.out);
