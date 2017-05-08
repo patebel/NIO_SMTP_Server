@@ -85,9 +85,8 @@ public class smtpserver {
 			 * JL: wird von der Init-Section übernommen *
 			 * 
 			 * ServerSocketChannel serverSocketChannel =
-			 * ServerSocketChannel.open(); //
-			 * serverSocketChannel.socket().bind(new InetSocketAddress(argv[0],
-			 * // Integer.parseInt(argv[1])));
+			 * ServerSocketChannel.open(); serverSocketChannel.socket().bind(new
+			 * InetSocketAddress(argv[0], // Integer.parseInt(argv[1])));
 			 * serverSocketChannel.socket().bind(new
 			 * InetSocketAddress("localhost", 5454)); Selector selector =
 			 * Selector.open(); serverSocketChannel.configureBlocking(false);
