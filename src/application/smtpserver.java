@@ -51,7 +51,21 @@ public class smtpserver {
 
 					while (keyIterator.hasNext()) {
 
+<<<<<<< HEAD
 						ourkey = keyIterator.next();
+=======
+					if (ourkey.isAcceptable()) {
+						// a connection was accepted by a ServerSocketChannel.
+						ServerSocketChannel sock = (ServerSocketChannel) ourkey.channel();
+						SocketChannel client = sock.accept();
+						client.configureBlocking(false);
+						client.register(selector, SelectionKey.OP_WRITE | SelectionKey.OP_READ);
+						// System.out.println(message_encoding("220"));
+						buf.put(message_encoding("220"));
+						buf.flip();
+						while (buf.hasRemaining())
+							client.write(buf);
+>>>>>>> branch 'master' of https://j.lotz@gitlab.tubit.tu-berlin.de/j.lotz/Java_NIO_SMTP_Server.git
 
 						if (ourkey.isAcceptable()) {
 							// a connection was accepted by a
