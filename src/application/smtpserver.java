@@ -58,8 +58,9 @@ public class smtpserver {
 						// System.out.println(message_encoding("220"));
 						buf.put(message_encoding("220"));
 						buf.flip();
-						while (buf.hasRemaining())
+						while (buf.hasRemaining()) {
 							client.write(buf);
+						}
 
 					} else if (ourkey.isConnectable()) {
 						// a connection was established with a remote server.
