@@ -68,6 +68,8 @@ public class smtpserver {
 		key.interestOps(SelectionKey.OP_WRITE);
 		System.out.println("I Bim in read");
 
+		// test
+
 	}
 
 	private static void write(SelectionKey key, Selector selector) throws IOException {
