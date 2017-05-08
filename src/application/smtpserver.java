@@ -45,6 +45,7 @@ public class smtpserver {
 				SocketChannel socketChannel = serverSocketChannel.accept();
 				if (socketChannel != null) {
 
+					socketChannel.configureBlocking(false);
 					SelectionKey ourkey = socketChannel.register(selector, SelectionKey.OP_CONNECT);
 					Set<SelectionKey> selectedKeys = selector.selectedKeys();
 					Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
