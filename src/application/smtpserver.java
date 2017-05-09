@@ -1,8 +1,6 @@
 package application;
 
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -16,6 +14,9 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.UnsupportedCharsetException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -50,18 +51,15 @@ public class smtpserver {
 		return extracted_text;
 	}
 
-	public static boolean printMail(String mailcontent) {
-		BufferedWriter output = null;
-		try {
-			File file = new File("./example.txt");
-			output = new BufferedWriter(new FileWriter(file, true));
-			output.write(mailcontent);
-			output.close();
-			return true;
-		} catch (IOException e) {
-			e.printStackTrace();
-			return false;
+	public static boolean printMail(String mailcontent) throws IOException {
+		Path file = Paths.get("./example.txt");
+		try (BufferedWriter writer = Files.newBufferedWriter(file, Charset.forName("US-ASCII"))) {
+			writer.write(mailcontent);
+		} catch (IOException ex) {
+			ex.printStackTrace();
 		}
+
+		return true;
 	}
 
 	public static String state_decoder(String Info) {
