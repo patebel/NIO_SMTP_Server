@@ -18,6 +18,12 @@ import java.util.Set;
 
 public class smtpserver {
 
+	// responsecodes festlegen
+	private static String servicereadymsg = "220 \r\n";
+	private static String okmsg = "250 \r\n";
+	private static String startmailinputmsg = "354 \r\n";
+	private static String closingchannelmsg = "221 \r\n";
+
 	private static Charset messageCharset = null;
 	private static CharsetDecoder decoder = null;
 	static ByteBuffer buf = ByteBuffer.allocate(256);
@@ -93,14 +99,15 @@ public class smtpserver {
 			e.printStackTrace(System.out);
 		}
 
-		key.cancel();  //nur um keine fehlermeldung durch fehlende kommunikation zu generieren
+		key.cancel(); // nur um keine fehlermeldung durch fehlende kommunikation
+						// zu generieren
 	}
 
 	private static void write(SelectionKey key, Selector selector) {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		buf.clear();
 		try {
-			buf.put(message_encoding("220 \r\n"));
+			buf.put(message_encoding(servicereadymsg));
 		} catch (IOException IO) {
 			IO.printStackTrace(System.out);
 		}
