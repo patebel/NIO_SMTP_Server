@@ -46,6 +46,16 @@ public class smtpserver {
 		return extracted_text;
 	}
 
+	public static String state_decoder(String Info) {
+
+		String clientcode = null;
+
+		for (int i = 0; i < 4; i++) {
+			clientcode = clientcode + Info.charAt(i);
+		}
+		return clientcode;
+	}
+
 	// JL: OOP neue Methode
 	public static Selector initSelector() throws IOException {
 		// create a new selector
@@ -88,7 +98,9 @@ public class smtpserver {
 		socketChannel.read(buf);
 		buf.flip();
 
+		smtpserverstate state = (smtpserverstate) key.attachment();
 		String client_response = message_decoder(buf);
+		String act_state = state_decoder(client_response);
 		System.out.println(client_response);
 
 		try {
@@ -97,8 +109,14 @@ public class smtpserver {
 			e.printStackTrace(System.out);
 		}
 
-		key.cancel(); // nur um keine fehlermeldung durch fehlende kommunikation
-						// zu generieren
+		if (act_state.equals("HELO")) {
+			state.setPreviousState(state.getState());
+			state.setState(smtpserverstate.HELORECEIVED);
+
+		} else if (act_state.equals("MAIL")) {
+			state.setPreviousState(state.getState());
+			state.setState(smtpserverstate.MAILFROMRECEIVED);
+		}
 	}
 
 	private static void write(SelectionKey key, Selector selector) {
@@ -165,7 +183,6 @@ public class smtpserver {
 					} else if (key.isReadable()) {
 						// a channel is ready for reading
 						System.out.println("read");
-
 						read(key, selector);
 
 					} else if (key.isWritable()) {
