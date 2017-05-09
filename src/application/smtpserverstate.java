@@ -5,14 +5,13 @@ import java.nio.ByteBuffer;
 public class smtpserverstate {
 
 	public final static int CONNECTED = 0;
-	public final static int READYSENT = 1;
-	public final static int HELORECEIVED = 2;
-	public final static int MAILFROMRECEIVED = 3;
-	public final static int RCPTRECEIVED = 4;
-	public final static int DATARECEIVED = 5;
-	public final static int MSGRECEIVED = 6;
-	public final static int QUITRECEIVED = 7;
-	public final static int HELPRECEIVED = 8;
+	public final static int HELORECEIVED = 1;
+	public final static int MAILFROMRECEIVED = 2;
+	public final static int RCPTRECEIVED = 3;
+	public final static int DATARECEIVED = 4;
+	public final static int MSGRECEIVED = 5;
+	public final static int QUITRECEIVED = 6;
+	public final static int HELPRECEIVED = 7;
 
 	private int state;
 	private int previousState;

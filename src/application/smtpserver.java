@@ -66,7 +66,7 @@ public class smtpserver {
 
 	public static String state_decoder(String Info) {
 
-		String clientcode = null;
+		String clientcode = "";
 
 		for (int i = 0; i < 4; i++) {
 			clientcode = clientcode + Info.charAt(i);
@@ -93,6 +93,11 @@ public class smtpserver {
 	}
 
 	public static void accept(SelectionKey key, Selector selector) throws IOException {
+
+		// Init server state
+		smtpserverstate state = new smtpserverstate();
+		state.setState(smtpserverstate.CONNECTED);
+
 		// new socketChannel
 		ServerSocketChannel serverSocketChannel = (ServerSocketChannel) key.channel();
 
@@ -103,7 +108,7 @@ public class smtpserver {
 		// Register the new SocketChannel with our Selector, indicating
 		// we'd like to be notified when there's data waiting to be read
 		try {
-			socketChannel.register(selector, SelectionKey.OP_WRITE);
+			socketChannel.register(selector, SelectionKey.OP_WRITE, state);
 		} catch (ClosedChannelException e) {
 			e.printStackTrace(System.out);
 		}
@@ -111,21 +116,17 @@ public class smtpserver {
 
 	public static void read(SelectionKey key, Selector selector) throws IOException {
 
+		// retrieve the server state from the key attachment
+		smtpserverstate state = (smtpserverstate) key.attachment();
+
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		buf.clear();
 		socketChannel.read(buf);
 		buf.flip();
 
-		smtpserverstate state = (smtpserverstate) key.attachment();
 		String client_response = message_decoder(buf);
 		String act_state = state_decoder(client_response);
-		System.out.println(client_response);
-
-		try {
-			socketChannel.register(selector, SelectionKey.OP_WRITE);
-		} catch (ClosedChannelException e) {
-			e.printStackTrace(System.out);
-		}
+		System.out.println(client_response + "\n" + act_state);
 
 		if (act_state.equals("HELO")) {
 			state.setPreviousState(state.getState());
@@ -134,19 +135,58 @@ public class smtpserver {
 		} else if (act_state.equals("MAIL")) {
 			state.setPreviousState(state.getState());
 			state.setState(smtpserverstate.MAILFROMRECEIVED);
+			// TODO Textverarbeitung
+
+		} else if (act_state.equals("RCPT")) {
+			state.setPreviousState(state.getState());
+			state.setState(smtpserverstate.RCPTRECEIVED);
+			// TODO Textverarbeitung
+
+		} else if (act_state.equals("DATA")) {
+			state.setPreviousState(state.getState());
+			state.setState(smtpserverstate.DATARECEIVED);
+
+		} else if (act_state.equals("QUIT")) {
+			state.setPreviousState(state.getState());
+			state.setState(smtpserverstate.QUITRECEIVED);
+			socketChannel.close();
+			key.cancel();
+			return;
+
+		} else if (act_state.equals("HELP")) {
+
+			if (state.getState() != smtpserverstate.HELPRECEIVED) {
+				state.setPreviousState(state.getState());
+				state.setState(smtpserverstate.HELPRECEIVED);
+			}
+
+		} else {
+			state.setPreviousState(state.getState());
+			state.setState(smtpserverstate.MSGRECEIVED);
+			// TODO Textverarbeitung
+
 		}
+
+		// key.attach(state);
+
+		try {
+			socketChannel.register(selector, SelectionKey.OP_WRITE, state);
+		} catch (ClosedChannelException e) {
+			e.printStackTrace(System.out);
+		}
+
 	}
 
 	private static void write(SelectionKey key, Selector selector) {
 
+		// retrieve the server state from the key attachment
 		smtpserverstate state = (smtpserverstate) key.attachment();
+
 		SocketChannel socketChannel = (SocketChannel) key.channel();
-		buf.clear();
 		String msgstatus = null;
-		// TODO if( state.getState = smtpserverstate.CONNECTED)
 
 		switch (state.getState()) {
-		case smtpserverstate.READYSENT:
+		case smtpserverstate.CONNECTED:
 			msgstatus = servicereadymsg;
 			break;
 		case smtpserverstate.HELORECEIVED:
@@ -172,6 +212,7 @@ public class smtpserver {
 			break;
 		}
 
+		buf.clear();
 		try {
 			buf.put(message_encoding(msgstatus));
 		} catch (IOException IO) {
@@ -188,7 +229,7 @@ public class smtpserver {
 		buf.clear();
 
 		try {
-			socketChannel.register(selector, SelectionKey.OP_READ);
+			socketChannel.register(selector, SelectionKey.OP_READ, state);
 		} catch (ClosedChannelException e) {
 			e.printStackTrace(System.out);
 		}
@@ -210,7 +251,7 @@ public class smtpserver {
 
 				int readyChannels = selector.select();
 
-				String mailcontent = "hallo I bims in Datai";
+				// String mailcontent = "hallo I bims in Datai";
 
 				if (readyChannels == 0)
 					continue;
@@ -218,7 +259,7 @@ public class smtpserver {
 				Set<SelectionKey> selectedKeys = selector.selectedKeys();
 				Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
 
-				printMail(mailcontent);
+				// printMail(mailcontent);
 
 				while (keyIterator.hasNext()) {
 					SelectionKey key = keyIterator.next();
@@ -227,19 +268,18 @@ public class smtpserver {
 						// a connection was accepted by a ServerSocketChannel.
 						accept(key, selector);
 						System.out.println("accept");
-						smtpserverstate state = new smtpserverstate();
-						state.setState(smtpserverstate.CONNECTED);
-						key.attach(state);
+
+						// key.attach(state);
 
 					} else if (key.isReadable()) {
 						// a channel is ready for reading
-						System.out.println("read");
 						read(key, selector);
+						System.out.println("read");
 
 					} else if (key.isWritable()) {
 						// a channel is ready for writing
-						System.out.println("write");
 						write(key, selector);
+						System.out.println("write");
 
 					}
 					keyIterator.remove();
