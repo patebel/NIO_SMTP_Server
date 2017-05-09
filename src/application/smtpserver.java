@@ -30,7 +30,6 @@ public class smtpserver {
 	private static String helpmsg = "214 \r\n";
 
 	private static Charset messageCharset = null;
-	private static CharsetDecoder decoder = null;
 	static ByteBuffer buf = ByteBuffer.allocate(8192);
 
 	public static byte[] message_encoding(String code) throws IOException {
