@@ -62,7 +62,6 @@ public class smtpserver {
 		serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
 
 		return selector;
-
 	}
 
 	public static void accept(SelectionKey key, Selector selector) throws IOException {
@@ -83,7 +82,6 @@ public class smtpserver {
 	}
 
 	public static void read(SelectionKey key, Selector selector) throws IOException {
-		// TODO Auto-generated method stub
 
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		buf.clear();
@@ -106,12 +104,14 @@ public class smtpserver {
 	private static void write(SelectionKey key, Selector selector) {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		buf.clear();
+
+		// TODO if( state.getState = smtpserverstate.CONNECTED)
+
 		try {
 			buf.put(message_encoding(servicereadymsg));
 		} catch (IOException IO) {
 			IO.printStackTrace(System.out);
 		}
-
 		buf.flip();
 		while (buf.hasRemaining()) {
 			try {
@@ -127,9 +127,14 @@ public class smtpserver {
 		} catch (ClosedChannelException e) {
 			e.printStackTrace(System.out);
 		}
-
 	}
 
+	/**
+	 * Main program loop
+	 * 
+	 * @param argv
+	 *            the parameters to start the program with
+	 */
 	public static void main(String[] argv) throws Exception {
 
 		try {
@@ -150,9 +155,12 @@ public class smtpserver {
 					SelectionKey key = keyIterator.next();
 
 					if (key.isAcceptable()) {
-						System.out.println("accept");
-						accept(key, selector);
 						// a connection was accepted by a ServerSocketChannel.
+						accept(key, selector);
+						System.out.println("accept");
+						smtpserverstate state = new smtpserverstate();
+						state.setState(smtpserverstate.CONNECTED);
+						key.attach(state);
 
 					} else if (key.isReadable()) {
 						// a channel is ready for reading
@@ -163,53 +171,12 @@ public class smtpserver {
 					} else if (key.isWritable()) {
 						// a channel is ready for writing
 						System.out.println("write");
-
 						write(key, selector);
+
 					}
 					keyIterator.remove();
 				}
 
-				/*
-				 * SocketChannel socketChannel = serverSocketChannel.accept();
-				 * if (socketChannel != null) {
-				 * 
-				 * socketChannel.configureBlocking(false); SelectionKey ourkey =
-				 * socketChannel.register(selector, SelectionKey.OP_CONNECT);
-				 * Set<SelectionKey> selectedKeys = selector.selectedKeys();
-				 * Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
-				 * 
-				 * 
-				 * while (keyIterator.hasNext()) {
-				 * 
-				 * ourkey = keyIterator.next();
-				 * 
-				 * if (ourkey.isAcceptable()) { // a connection was accepted by
-				 * a // ServerSocketChannel. ServerSocketChannel sock =
-				 * (ServerSocketChannel) ourkey.channel(); SocketChannel client
-				 * = sock.accept(); client.configureBlocking(false);
-				 * client.register(selector, SelectionKey.OP_WRITE |
-				 * SelectionKey.OP_READ); //
-				 * System.out.println(message_encoding("220"));
-				 * buf.put(message_encoding("220")); buf.flip(); while
-				 * (buf.hasRemaining()) { client.write(buf); }
-				 * 
-				 * } else if (ourkey.isConnectable()) { // a connection was
-				 * established with a remote // server.
-				 * 
-				 * } else if (ourkey.isReadable()) { // a channel is ready for
-				 * reading SocketChannel client = (SocketChannel)
-				 * ourkey.channel(); client.read(buffer); buffer.flip(); //
-				 * Further processing of data client.write(buffer);
-				 * buffer.clear();
-				 * 
-				 * } else if (ourkey.isWritable()) {
-				 * 
-				 * // a channel is ready for writing }
-				 * 
-				 * keyIterator.remove(); }
-				 * 
-				 * }
-				 */
 			}
 		} catch (IOException e) {
 			e.printStackTrace(System.out);
