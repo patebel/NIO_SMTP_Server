@@ -1,5 +1,8 @@
 package application;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -23,6 +26,7 @@ public class smtpserver {
 	private static String okmsg = "250 \r\n";
 	private static String startmailinputmsg = "354 \r\n";
 	private static String closingchannelmsg = "221 \r\n";
+	private static String helpmsg = "214 \r\n";
 
 	private static Charset messageCharset = null;
 	private static CharsetDecoder decoder = null;
@@ -44,6 +48,20 @@ public class smtpserver {
 		String extracted_text = charBuf.toString();
 
 		return extracted_text;
+	}
+
+	public static boolean printMail(String mailcontent) {
+		BufferedWriter output = null;
+		try {
+			File file = new File("./example.txt");
+			output = new BufferedWriter(new FileWriter(file, true));
+			output.write(mailcontent);
+			output.close();
+			return true;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return false;
+		}
 	}
 
 	// JL: OOP neue Methode
@@ -102,13 +120,42 @@ public class smtpserver {
 	}
 
 	private static void write(SelectionKey key, Selector selector) {
+
+		smtpserverstate state = (smtpserverstate) key.attachment();
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		buf.clear();
-
+		String msgstatus = null;
 		// TODO if( state.getState = smtpserverstate.CONNECTED)
 
+		switch (state.getState()) {
+		case smtpserverstate.READYSENT:
+			msgstatus = servicereadymsg;
+			break;
+		case smtpserverstate.HELORECEIVED:
+			msgstatus = okmsg;
+			break;
+		case smtpserverstate.MAILFROMRECEIVED:
+			msgstatus = okmsg;
+			break;
+		case smtpserverstate.RCPTRECEIVED:
+			msgstatus = okmsg;
+			break;
+		case smtpserverstate.DATARECEIVED:
+			msgstatus = startmailinputmsg;
+			break;
+		case smtpserverstate.MSGRECEIVED:
+			msgstatus = okmsg;
+			break;
+		case smtpserverstate.QUITRECEIVED:
+			msgstatus = closingchannelmsg;
+			break;
+		case smtpserverstate.HELPRECEIVED:
+			msgstatus = helpmsg;
+			break;
+		}
+
 		try {
-			buf.put(message_encoding(servicereadymsg));
+			buf.put(message_encoding(msgstatus));
 		} catch (IOException IO) {
 			IO.printStackTrace(System.out);
 		}
@@ -145,11 +192,15 @@ public class smtpserver {
 
 				int readyChannels = selector.select();
 
+				String mailcontent = "hallo I bims in Datai";
+
 				if (readyChannels == 0)
 					continue;
 
 				Set<SelectionKey> selectedKeys = selector.selectedKeys();
 				Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
+
+				printMail(mailcontent);
 
 				while (keyIterator.hasNext()) {
 					SelectionKey key = keyIterator.next();
