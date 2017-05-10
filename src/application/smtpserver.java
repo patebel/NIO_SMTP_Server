@@ -17,6 +17,7 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -52,13 +53,40 @@ public class smtpserver {
 
 	public static boolean printMail(String mailcontent) throws IOException {
 		Path file = Paths.get("./maillogging.txt");
-		try (BufferedWriter writer = Files.newBufferedWriter(file, Charset.forName("US-ASCII"))) {
+		try (BufferedWriter writer = Files.newBufferedWriter(file, Charset.forName("US-ASCII"),
+				StandardOpenOption.APPEND)) {
 			writer.write(mailcontent);
 		} catch (IOException ex) {
 			ex.printStackTrace();
 		}
 
 		return true;
+	}
+
+	public static void fileInit() throws IOException {
+		Path file = Paths.get("./maillogging.txt");
+		try (BufferedWriter writer = Files.newBufferedWriter(file, Charset.forName("US-ASCII"))) {
+			writer.write("MAIL FROM:;RCPT TO:;CONTENT;\r\n");
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
+
+		return;
+	}
+
+	public static String extract_adress(String comp_resp) {
+		String extracted_adress = "";
+
+		for (int i = 0; i < comp_resp.length(); i++) {
+			if (comp_resp.charAt(i) == ':') {
+				for (int a = i + 2; a < comp_resp.length() - 1; a++) {
+					extracted_adress += comp_resp.charAt(a);
+				}
+				break;
+			}
+		}
+
+		return extracted_adress;
 	}
 
 	public static String state_decoder(String Info) {
@@ -132,12 +160,12 @@ public class smtpserver {
 		} else if (act_state.equals("MAIL")) {
 			state.setPreviousState(state.getState());
 			state.setState(smtpserverstate.MAILFROMRECEIVED);
-			state.saveMsg(client_response + ";   ");
+			state.saveMsg(extract_adress(client_response) + ";");
 
 		} else if (act_state.equals("RCPT")) {
 			state.setPreviousState(state.getState());
 			state.setState(smtpserverstate.RCPTRECEIVED);
-			state.saveMsg(client_response + ";   ");
+			state.saveMsg("\n" + extract_adress(client_response) + ";");
 
 		} else if (act_state.equals("DATA")) {
 			state.setPreviousState(state.getState());
@@ -146,7 +174,7 @@ public class smtpserver {
 		} else if (act_state.equals("QUIT")) {
 			state.setPreviousState(state.getState());
 			state.setState(smtpserverstate.QUITRECEIVED);
-			printMail(state.saveMsg("\n"));
+			printMail(state.saveMsg(";\r\n"));
 			socketChannel.close();
 			key.cancel();
 			return;
@@ -161,7 +189,7 @@ public class smtpserver {
 		} else {
 			state.setPreviousState(state.getState());
 			state.setState(smtpserverstate.MSGRECEIVED);
-			state.saveMsg(client_response);
+			state.saveMsg(client_response.substring(0, client_response.length() - 5));
 		}
 
 		// key.attach(state);
@@ -239,6 +267,9 @@ public class smtpserver {
 	 *            the parameters to start the program with
 	 */
 	public static void main(String[] argv) throws Exception {
+
+		// Init File IO
+		fileInit();
 
 		try {
 
