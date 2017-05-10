@@ -51,7 +51,7 @@ public class smtpserver {
 	}
 
 	public static boolean printMail(String mailcontent) throws IOException {
-		Path file = Paths.get("./example.txt");
+		Path file = Paths.get("./maillogging.txt");
 		try (BufferedWriter writer = Files.newBufferedWriter(file, Charset.forName("US-ASCII"))) {
 			writer.write(mailcontent);
 		} catch (IOException ex) {
@@ -132,12 +132,12 @@ public class smtpserver {
 		} else if (act_state.equals("MAIL")) {
 			state.setPreviousState(state.getState());
 			state.setState(smtpserverstate.MAILFROMRECEIVED);
-			// TODO Textverarbeitung
+			state.saveMsg(client_response + ";   ");
 
 		} else if (act_state.equals("RCPT")) {
 			state.setPreviousState(state.getState());
 			state.setState(smtpserverstate.RCPTRECEIVED);
-			// TODO Textverarbeitung
+			state.saveMsg(client_response + ";   ");
 
 		} else if (act_state.equals("DATA")) {
 			state.setPreviousState(state.getState());
@@ -146,6 +146,7 @@ public class smtpserver {
 		} else if (act_state.equals("QUIT")) {
 			state.setPreviousState(state.getState());
 			state.setState(smtpserverstate.QUITRECEIVED);
+			printMail(state.saveMsg("\n"));
 			socketChannel.close();
 			key.cancel();
 			return;
@@ -160,8 +161,7 @@ public class smtpserver {
 		} else {
 			state.setPreviousState(state.getState());
 			state.setState(smtpserverstate.MSGRECEIVED);
-			// TODO Textverarbeitung
-
+			state.saveMsg(client_response);
 		}
 
 		// key.attach(state);
@@ -248,15 +248,11 @@ public class smtpserver {
 
 				int readyChannels = selector.select();
 
-				// String mailcontent = "hallo I bims in Datai";
-
 				if (readyChannels == 0)
 					continue;
 
 				Set<SelectionKey> selectedKeys = selector.selectedKeys();
 				Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
-
-				// printMail(mailcontent);
 
 				while (keyIterator.hasNext()) {
 					SelectionKey key = keyIterator.next();

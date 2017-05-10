@@ -17,6 +17,8 @@ public class smtpserverstate {
 	private int previousState;
 	private ByteBuffer buffer;
 
+	String msgString = "";
+
 	public smtpserverstate() {
 
 		this.state = CONNECTED;
@@ -45,6 +47,11 @@ public class smtpserverstate {
 
 	public void setBuffer(ByteBuffer buffer) {
 		this.buffer = buffer;
+	}
+
+	public String saveMsg(String Content) {
+		msgString += Content;
+		return msgString;
 	}
 
 }
