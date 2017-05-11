@@ -14,6 +14,7 @@ public class smtpserverstate {
 	public final static int HELPRECEIVED = 7;
 
 	private int state;
+	private int msgcnt;
 	private int previousState;
 	private ByteBuffer buffer;
 
@@ -52,6 +53,15 @@ public class smtpserverstate {
 	public String saveMsg(String Content) {
 		msgString += Content;
 		return msgString;
+	}
+
+	public int msg_cnt(int actcnt) {
+		msgcnt = actcnt + 1;
+		return msgcnt;
+	}
+
+	public int get_msg_cnt() {
+		return msgcnt;
 	}
 
 }

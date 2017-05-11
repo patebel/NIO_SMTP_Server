@@ -33,6 +33,11 @@ public class smtpserver {
 	private static Charset messageCharset = null;
 	static ByteBuffer buf = ByteBuffer.allocate(8192);
 
+	public static int msgcnt1 = 0;
+	public static int msgcnt2 = 0;
+	public static int msgcnt3 = 0;
+	public static int msgcnt4 = 0;
+
 	public static byte[] message_encoding(String code) throws IOException {
 		try {
 			messageCharset = Charset.forName("US-ASCII");
@@ -79,7 +84,7 @@ public class smtpserver {
 
 		for (int i = 0; i < comp_resp.length(); i++) {
 			if (comp_resp.charAt(i) == ':') {
-				for (int a = i + 2; a < comp_resp.length() - 1; a++) {
+				for (int a = i + 2; a < comp_resp.length() - 2; a++) {
 					extracted_adress += comp_resp.charAt(a);
 				}
 				break;
@@ -87,6 +92,29 @@ public class smtpserver {
 		}
 
 		return extracted_adress;
+	}
+
+	/*
+	 * Zaehlt die Anzahl der empfangenen Mails pro Senderadresse
+	 */
+	public static int msg_cnt(String mailAdress) {
+
+		if (mailAdress.equals("abc@def.edu")) {
+			msgcnt1 += 1;
+			return msgcnt1;
+		} else if (mailAdress.equals("ghi@jkl.com")) {
+			msgcnt2 += 1;
+			return msgcnt2;
+		} else if (mailAdress.equals("nmo@pqr.gov")) {
+			msgcnt3 += 1;
+			return msgcnt3;
+		} else if (mailAdress.equals("stu@vwx.de")) {
+			msgcnt4 += 1;
+			return msgcnt4;
+		} else {
+			return 0;
+		}
+
 	}
 
 	public static String state_decoder(String Info) {
@@ -160,7 +188,7 @@ public class smtpserver {
 		} else if (act_state.equals("MAIL")) {
 			state.setPreviousState(state.getState());
 			state.setState(smtpserverstate.MAILFROMRECEIVED);
-			state.saveMsg(extract_adress(client_response) + ";");
+			state.saveMsg(extract_adress(client_response) + "_" + msg_cnt(extract_adress(client_response)) + ";");
 
 		} else if (act_state.equals("RCPT")) {
 			state.setPreviousState(state.getState());
