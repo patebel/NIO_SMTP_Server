@@ -33,6 +33,11 @@ public class smtpserver {
 	private static Charset messageCharset = null;
 	static ByteBuffer buf = ByteBuffer.allocate(8192);
 
+	/*
+	 * String wird in US-ASCI kodierte Bytes umgewandelt und in den Bytebuffer
+	 * "byte" geschrieben
+	 */
+
 	public static byte[] message_encoding(String code) throws IOException {
 		try {
 			messageCharset = Charset.forName("US-ASCII");
@@ -43,6 +48,11 @@ public class smtpserver {
 		return responsecode;
 	}
 
+	/*
+	 * empfangene Nachricht wird aus Buffer ausgelesen und in einen String zur
+	 * Weiterverarbeitung umgewandelt
+	 */
+
 	public static String message_decoder(ByteBuffer read_buf) throws CharacterCodingException {
 		CharsetDecoder decoder = messageCharset.newDecoder();
 		CharBuffer charBuf = decoder.decode(read_buf);
@@ -50,6 +60,10 @@ public class smtpserver {
 
 		return extracted_text;
 	}
+
+	/*
+	 * Schreibt die empfangenen Nachrichten über einen Filechannel in diese
+	 */
 
 	public static boolean printMail(String mailcontent) throws IOException {
 		Path file = Paths.get("./maillogging.txt");
@@ -63,6 +77,10 @@ public class smtpserver {
 		return true;
 	}
 
+	/*
+	 * Erstellt und intitialisiert die Textdatei
+	 */
+
 	public static void fileInit() throws IOException {
 		Path file = Paths.get("./maillogging.txt");
 		try (BufferedWriter writer = Files.newBufferedWriter(file, Charset.forName("US-ASCII"))) {
@@ -70,10 +88,11 @@ public class smtpserver {
 		} catch (IOException ex) {
 			ex.printStackTrace();
 		}
-
-		return;
 	}
 
+	/*
+	 * Absender bzw. Empfängeradresse wird aus der Nachricht extrahiert
+	 */
 	public static String extract_adress(String comp_resp) {
 		String extracted_adress = "";
 
@@ -89,6 +108,9 @@ public class smtpserver {
 		return extracted_adress;
 	}
 
+	/*
+	 * Extrahieren der Messagekennung
+	 */
 	public static String state_decoder(String Info) {
 
 		String clientcode = "";
@@ -99,7 +121,10 @@ public class smtpserver {
 		return clientcode;
 	}
 
-	// JL: OOP neue Methode
+	/*
+	 * ServerSocketChannel eröffnen, Selector initialisieren und Port und
+	 * Adresse zuordnen
+	 */
 	public static Selector initSelector() throws IOException {
 		// create a new selector
 		Selector selector = Selector.open();
@@ -117,6 +142,10 @@ public class smtpserver {
 		return selector;
 	}
 
+	/*
+	 * Verbindungsaufbau und Anlegen des Kommunikationskanals (SocketChannel)
+	 * und Interest-Set in der "register"-Funktion festlegen
+	 */
 	public static void accept(SelectionKey key, Selector selector) throws IOException {
 
 		// Init server state
@@ -130,8 +159,6 @@ public class smtpserver {
 		SocketChannel socketChannel = serverSocketChannel.accept();
 		socketChannel.configureBlocking(false);
 
-		// Register the new SocketChannel with our Selector, indicating
-		// we'd like to be notified when there's data waiting to be read
 		try {
 			socketChannel.register(selector, SelectionKey.OP_WRITE, state);
 		} catch (ClosedChannelException e) {
@@ -139,6 +166,13 @@ public class smtpserver {
 		}
 	}
 
+	/*
+	 * Socketchannel wir in Abhängigkeit vom Satus des Servers ausgelesen. Bem:
+	 * Buffer mus vor gebrauch gecleart und anschließend geflippt werden, damit
+	 * der Pointer an der richtigen Stelle steht Aktueller Serverstatus wird in
+	 * "Previous State" geschrieben (notwendig, falls Client "HELP" sendet) und
+	 * der Status geupdated
+	 */
 	public static void read(SelectionKey key, Selector selector) throws IOException {
 
 		// retrieve the server state from the key attachment
@@ -192,8 +226,6 @@ public class smtpserver {
 			state.saveMsg(client_response.substring(0, client_response.length() - 5));
 		}
 
-		// key.attach(state);
-
 		try {
 			socketChannel.register(selector, SelectionKey.OP_WRITE, state);
 		} catch (ClosedChannelException e) {
@@ -202,6 +234,9 @@ public class smtpserver {
 
 	}
 
+	/*
+	 * Responsecode wird auf Channel geschrieben
+	 */
 	private static void write(SelectionKey key, Selector selector) {
 
 		// retrieve the server state from the key attachment
@@ -237,6 +272,7 @@ public class smtpserver {
 			break;
 		}
 
+		// Buffer mit Messagestatus füllen und auf Channel schreiben
 		buf.clear();
 		try {
 			buf.put(message_encoding(msgstatus));
@@ -266,6 +302,7 @@ public class smtpserver {
 	 * @param argv
 	 *            the parameters to start the program with
 	 */
+
 	public static void main(String[] argv) throws Exception {
 
 		// Init File IO
@@ -275,6 +312,8 @@ public class smtpserver {
 
 			Selector selector = initSelector();
 
+			// Dauerschleife: Channels die das Interestset bedienen, werden in
+			// "readyChannels" geschrieben
 			while (true) {
 
 				int readyChannels = selector.select();
@@ -285,27 +324,30 @@ public class smtpserver {
 				Set<SelectionKey> selectedKeys = selector.selectedKeys();
 				Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
 
+				// keyIterator gibt die Möglichkeit die Sammlung der Keys zu
+				// durchlaufen
+				// Logikschleife bindet alle Channels ein, die das Interestset
+				// bedienen und arbeitet sie je nach Key-Status ab
 				while (keyIterator.hasNext()) {
 					SelectionKey key = keyIterator.next();
 
 					if (key.isAcceptable()) {
 						// a connection was accepted by a ServerSocketChannel.
 						accept(key, selector);
-						System.out.println("accept");
-
-						// key.attach(state);
+						// System.out.println("accept");
 
 					} else if (key.isReadable()) {
 						// a channel is ready for reading
 						read(key, selector);
-						System.out.println("read");
+						// System.out.println("read");
 
 					} else if (key.isWritable()) {
 						// a channel is ready for writing
 						write(key, selector);
-						System.out.println("write");
+						// System.out.println("write");
 
 					}
+					// key wird aus Readyset gelöscht
 					keyIterator.remove();
 				}
 
@@ -314,24 +356,5 @@ public class smtpserver {
 			e.printStackTrace(System.out);
 		}
 
-		/*
-		 * // TODO Auto-generated method stub
-		 * 
-		 * // rename with correct data String servername = null; int port = 80;
-		 * 
-		 * // Declaration; Socket, input, output ServerSocketChannel sc =
-		 * ServerSocketChannel.open();
-		 * 
-		 * sc.socket().bind(new InetSocketAddress(servername, port));
-		 * sc.configureBlocking(false);
-		 * 
-		 * // size? int capacity = 8192; String filepath = "./user/test.txt";
-		 * ByteBuffer bbuf = ByteBuffer.allocate(capacity); FileOutputStream fos
-		 * = new FileOutputStream(filepath);
-		 * 
-		 * while (true) { SocketChannel socketChannel = sc.accept();
-		 * 
-		 * if (socketChannel != null) { // hier die Buffer verwenden? } }
-		 */
 	}
 }
